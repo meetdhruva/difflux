@@ -1,27 +1,28 @@
 //! Side-by-side text comparison: virtualized rows, synchronized scrolling,
 //! word-level highlights and an overview ruler.
 
-use std::path::PathBuf;
-
 use difflux_app::{Command, TextView};
 use difflux_core::Side;
 use difflux_diff_text::{InlineDiff, RowKind};
 use egui::text::{LayoutJob, TextFormat};
 use egui::{Align2, Color32, FontId, Key, Rect, Role, ScrollArea, Sense, Stroke, TextStyle, Ui, WidgetInfo, pos2, vec2};
 
+use crate::app::Request;
 use crate::format;
 use crate::theme::Palette;
 
 const RULER_WIDTH: f32 = 14.0;
 const DIVIDER: f32 = 6.0;
 const PAD: f32 = 6.0;
+/// Longer lines (minified files, logs) are drawn up to this many bytes so a
+/// single huge line cannot stall every frame.
+const MAX_RENDER_BYTES: usize = 10_000;
 
 /// A text comparison on the view stack.
 #[derive(Debug)]
 pub(crate) struct TextPane {
     pub view: TextView,
-    pub left: PathBuf,
-    pub right: PathBuf,
+    pub request: Request,
     /// Row to bring into view on the next frame.
     pub pending_row: Option<usize>,
     /// Absolute scroll offset to apply on the next frame (used to keep position on refresh).
@@ -34,17 +35,16 @@ pub(crate) struct TextPane {
 }
 
 impl TextPane {
-    pub(crate) fn new(view: TextView, left: PathBuf, right: PathBuf) -> Self {
+    pub(crate) fn new(view: TextView, request: Request) -> Self {
         let max_chars = [Side::Left, Side::Right]
             .iter()
             .filter_map(|&s| view.document(s))
-            .flat_map(|d| d.lines().map(|l| l.chars().count() + 3 * l.matches('\t').count()))
+            .flat_map(|d| d.lines().map(|l| (l.chars().count() + 3 * l.matches('\t').count()).min(MAX_RENDER_BYTES)))
             .max()
             .unwrap_or(0);
         Self {
             view,
-            left,
-            right,
+            request,
             pending_row: None,
             pending_offset: None,
             offset_y: 0.0,
@@ -191,7 +191,8 @@ fn paint_row(
         if let Some(bg) = bg {
             painter.rect_filled(text_rect, 0.0, bg);
         }
-        if let Some((idx, text)) = content {
+        if let Some((idx, full)) = content {
+            let text = &full[..full.floor_char_boundary(MAX_RENDER_BYTES)];
             let number_x = gutter.max.x - PAD - font.size * 1.2;
             painter.text(pos2(number_x, rect.center().y), Align2::RIGHT_CENTER, idx.to_string(), font.clone(), pal.muted_fg);
             painter.text(pos2(gutter.max.x - PAD * 0.5, rect.center().y), Align2::RIGHT_CENTER, marker, font.clone(), marker_color);

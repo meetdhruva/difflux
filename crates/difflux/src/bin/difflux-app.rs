@@ -14,6 +14,7 @@ use std::process::ExitCode;
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 fn main() -> ExitCode {
+    difflux_app::crash::install(env!("CARGO_PKG_VERSION"));
     let mut paths = std::env::args_os().skip(1).map(PathBuf::from);
     let (left, right) = (paths.next(), paths.next());
     match difflux_gui::run(left, right) {

@@ -4,7 +4,7 @@
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
-use difflux_app::{Command, CompareError, Comparison, Filter, FolderView, Job, TextView, compare_paths};
+use difflux_app::{Command, CompareError, Comparison, Filter, FolderView, Job, TextView, compare_one_sided, compare_paths};
 use difflux_core::{CompareOptions, ContentMode, Side, WhitespaceMode};
 use egui::{Align, Context, Id, Key, Layout, RichText, TextEdit, Ui};
 use serde::{Deserialize, Serialize};
@@ -42,12 +42,19 @@ enum Target {
     Refresh,
 }
 
+/// What to compare; kept with each view so it can be re-run when options change.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) enum Request {
+    Paths(PathBuf, PathBuf),
+    /// A file that exists on only one side, compared against nothing.
+    OneSided(PathBuf, Side),
+}
+
 #[derive(Debug)]
 struct Pending {
     job: Job<Result<Comparison, CompareError>>,
     target: Target,
-    left: PathBuf,
-    right: PathBuf,
+    request: Request,
 }
 
 #[derive(Debug)]
@@ -70,6 +77,16 @@ pub struct DiffluxApp {
     compare_on_start: bool,
     theme_applied: bool,
     tz: jiff::tz::TimeZone,
+    logo: Option<Logo>,
+}
+
+/// Keeps the home-screen logo texture alive (egui's handle has no `Debug`).
+struct Logo(egui::TextureHandle);
+
+impl std::fmt::Debug for Logo {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("Logo")
+    }
 }
 
 impl DiffluxApp {
@@ -101,6 +118,7 @@ impl DiffluxApp {
             compare_on_start,
             theme_applied: false,
             tz: jiff::tz::TimeZone::try_system().unwrap_or(jiff::tz::TimeZone::UTC),
+            logo: None,
         }
     }
 
@@ -177,18 +195,21 @@ impl DiffluxApp {
 
     // ----- jobs -------------------------------------------------------------
 
-    fn start(&mut self, ctx: &Context, left: PathBuf, right: PathBuf, target: Target) {
+    fn start(&mut self, ctx: &Context, request: Request, target: Target) {
         self.error = None;
         let opts = self.settings.options.clone();
-        let (l, r) = (left.clone(), right.clone());
+        let req = request.clone();
         let repaint = ctx.clone();
         match Job::spawn(
             "compare",
-            move |cancel, progress| compare_paths(&l, &r, &opts, cancel, progress),
+            move |cancel, progress| match &req {
+                Request::Paths(l, r) => compare_paths(l, r, &opts, cancel, progress),
+                Request::OneSided(path, side) => compare_one_sided(path, *side, &opts.text, cancel).map(|f| Comparison::Files(Box::new(f))),
+            },
             move || repaint.request_repaint(),
         ) {
             // Replacing the pending job drops (and so cancels) the previous one.
-            Ok(job) => self.pending = Some(Pending { job, target, left, right }),
+            Ok(job) => self.pending = Some(Pending { job, target, request }),
             Err(e) => self.error = Some(format!("cannot start compare: {e}")),
         }
     }
@@ -214,7 +235,7 @@ impl DiffluxApp {
         };
         let view = match comparison {
             Comparison::Files(f) => {
-                let mut pane = TextPane::new(TextView::new(*f), p.left.clone(), p.right.clone());
+                let mut pane = TextPane::new(TextView::new(*f), p.request.clone());
                 match previous_offset {
                     Some(y) => pane.pending_offset = Some(y),
                     None => pane.pending_row = pane.view.first_difference(),
@@ -229,7 +250,9 @@ impl DiffluxApp {
         match p.target {
             Target::Root => {
                 self.views = vec![view];
-                self.remember(&p.left, &p.right);
+                if let Request::Paths(l, r) = &p.request {
+                    self.remember(l, r);
+                }
             }
             Target::Push => self.views.push(view),
             Target::Refresh => {
@@ -286,7 +309,7 @@ impl DiffluxApp {
                     self.error = Some("Choose both a left and a right file or folder.".into());
                 } else {
                     let (l, r) = (PathBuf::from(l), PathBuf::from(r));
-                    self.start(ctx, l, r, Target::Root);
+                    self.start(ctx, Request::Paths(l, r), Target::Root);
                 }
             }
             Command::SwapSides => {
@@ -374,13 +397,9 @@ impl DiffluxApp {
     fn refresh(&mut self, ctx: &Context, folder_option: bool) {
         match (self.views.last(), self.views.len()) {
             (None, _) => {}
-            (Some(View::Text(t)), n) if n > 1 && !folder_option => {
-                let (l, r) = (t.left.clone(), t.right.clone());
-                self.start(ctx, l, r, Target::Refresh);
-            }
-            (Some(View::Text(t)), 1) => {
-                let (l, r) = (t.left.clone(), t.right.clone());
-                self.start(ctx, l, r, Target::Refresh);
+            (Some(View::Text(t)), n) if n == 1 || !folder_option => {
+                let request = t.request.clone();
+                self.start(ctx, request, Target::Refresh);
             }
             _ => self.dispatch(ctx, Command::Compare),
         }
@@ -436,10 +455,11 @@ impl DiffluxApp {
         let left = f.view.diff.side_path(id, Side::Left).filter(|_| node.left.is_some());
         let right = f.view.diff.side_path(id, Side::Right).filter(|_| node.right.is_some());
         match (left, right) {
-            (Some(l), Some(r)) if !node.is_dir() => self.start(ctx, l, r, Target::Push),
-            (Some(_), None) => self.notify("This entry only exists on the left"),
-            (None, Some(_)) => self.notify("This entry only exists on the right"),
-            _ => {}
+            _ if node.is_dir() => {}
+            (Some(l), Some(r)) => self.start(ctx, Request::Paths(l, r), Target::Push),
+            (Some(l), None) => self.start(ctx, Request::OneSided(l, Side::Left), Target::Push),
+            (None, Some(r)) => self.start(ctx, Request::OneSided(r, Side::Right), Target::Push),
+            (None, None) => {}
         }
     }
 
@@ -703,8 +723,18 @@ impl DiffluxApp {
 
     fn home(&mut self, ui: &mut Ui, pal: &Palette) {
         let hovering = ui.ctx().input(|i| !i.raw.hovered_files.is_empty());
-        ui.add_space(48.0);
+        if self.logo.is_none()
+            && let Ok(icon) = eframe::icon_data::from_png_bytes(crate::ICON_PNG)
+        {
+            let image = egui::ColorImage::from_rgba_unmultiplied([icon.width as usize, icon.height as usize], &icon.rgba);
+            self.logo = Some(Logo(ui.ctx().load_texture("difflux-logo", image, egui::TextureOptions::LINEAR)));
+        }
+        ui.add_space(40.0);
         ui.vertical_centered(|ui| {
+            if let Some(logo) = &self.logo {
+                ui.add(egui::Image::from_texture((logo.0.id(), egui::vec2(96.0, 96.0))).alt_text("difflux logo"));
+                ui.add_space(8.0);
+            }
             ui.heading(RichText::new("difflux").size(32.0).strong());
             ui.label(RichText::new("Compare files and folders — fast, and without surprises.").color(pal.muted_fg));
             ui.add_space(20.0);
@@ -727,14 +757,24 @@ impl DiffluxApp {
                 ui.add_space(24.0);
             }
             let ctx = ui.ctx().clone();
-            egui::Grid::new("home-keys").num_columns(2).spacing([16.0, 4.0]).show(ui, |ui| {
-                for cmd in
-                    [Command::Compare, Command::NextDifference, Command::PreviousDifference, Command::SwapSides, Command::CommandPalette]
-                {
-                    ui.label(RichText::new(keymap::label(&ctx, cmd).unwrap_or_default()).monospace().color(pal.muted_fg));
-                    ui.label(cmd.title());
-                    ui.end_row();
-                }
+            // Grids lay out left-aligned; give this one a centered column of its own.
+            let width = 300.0_f32.min(ui.available_width());
+            let left = ui.max_rect().center().x - width / 2.0;
+            let column = egui::Rect::from_min_size(egui::pos2(left, ui.cursor().min.y), egui::vec2(width, 160.0));
+            ui.scope_builder(egui::UiBuilder::new().max_rect(column).layout(Layout::top_down(Align::Min)), |ui| {
+                egui::Grid::new("home-keys").num_columns(2).spacing([16.0, 4.0]).show(ui, |ui| {
+                    for cmd in [
+                        Command::Compare,
+                        Command::NextDifference,
+                        Command::PreviousDifference,
+                        Command::SwapSides,
+                        Command::CommandPalette,
+                    ] {
+                        ui.label(RichText::new(keymap::label(&ctx, cmd).unwrap_or_default()).monospace().color(pal.muted_fg));
+                        ui.label(cmd.title());
+                        ui.end_row();
+                    }
+                });
             });
         });
     }

@@ -75,9 +75,13 @@ pub(crate) fn pressed(ctx: &Context) -> Vec<Command> {
     })
 }
 
-/// Human label of the first shortcut bound to `command`, e.g. `Ctrl+N`.
+/// The shortcut shown in menus and tooltips: a function key when there is one
+/// (F8 / Shift+F8 read as a pair), otherwise the simplest binding.
 pub(crate) fn label(ctx: &Context, command: Command) -> Option<String> {
-    BINDINGS.iter().rev().find(|b| b.command == command).map(|b| ctx.format_shortcut(&b.shortcut))
+    let is_f_key = |b: &&Binding| matches!(b.shortcut.logical_key, Key::F1 | Key::F5 | Key::F8);
+    let mut bound = BINDINGS.iter().filter(|b| b.command == command);
+    let first_f = bound.clone().find(is_f_key);
+    first_f.or_else(|| bound.next_back()).map(|b| ctx.format_shortcut(&b.shortcut))
 }
 
 /// Every label bound to `command`, for the shortcuts sheet.

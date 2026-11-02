@@ -10,6 +10,8 @@ use crate::compare::FileCompare;
 
 /// Cached inline diffs are dropped beyond this many rows (only visible rows are ever requested).
 const INLINE_CACHE_LIMIT: usize = 4096;
+/// Longest line text included in an accessibility label.
+const LABEL_MAX_BYTES: usize = 300;
 
 /// Navigation and rendering state for one file comparison.
 #[derive(Debug)]
@@ -114,7 +116,13 @@ impl TextView {
         let Some(r) = self.rows().get(row) else { return String::new() };
         let left = self.cell(row, Side::Left);
         let right = self.cell(row, Side::Right);
-        let fmt = |c: Option<(LineIdx, &str)>| c.map(|(i, t)| format!("line {i}: {t}"));
+        // Screen readers get the start of very long lines, not megabytes of text.
+        let fmt = |c: Option<(LineIdx, &str)>| {
+            c.map(|(i, t)| {
+                let cut = t.floor_char_boundary(LABEL_MAX_BYTES);
+                if cut < t.len() { format!("line {i}: {}…", &t[..cut]) } else { format!("line {i}: {t}") }
+            })
+        };
         match r.kind {
             RowKind::Equal => format!("Unchanged {}", fmt(left).unwrap_or_default()),
             RowKind::Delete => format!("Removed from left, {}", fmt(left).unwrap_or_default()),

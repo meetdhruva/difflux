@@ -117,6 +117,32 @@ fn folder_compare_open_file_and_go_back() -> TestResult {
     h.key_press(Key::Backspace);
     h.run();
     assert_eq!(h.state().depth(), 1);
+
+    // An entry that exists on one side only opens against nothing.
+    h.key_press(Key::F8);
+    h.run();
+    h.key_press(Key::Enter);
+    settle(&mut h);
+    assert_eq!(h.state().error(), None);
+    assert_eq!(h.state().depth(), 2);
+    h.get_by_label("Removed from left, line 1: gone");
+    Ok(())
+}
+
+#[test]
+fn huge_single_line_files_render() -> TestResult {
+    let dir = tempfile::tempdir()?;
+    let (a, b) = (dir.path().join("a.min.js"), dir.path().join("b.min.js"));
+    let line: String = "var x=1;".repeat(250_000); // 2 MB on one line
+    fs::write(&a, format!("{line}\n"))?;
+    fs::write(&b, format!("{line}y\n"))?;
+    let mut h = harness(app_for(&a, &b));
+    settle(&mut h);
+    assert_eq!(h.state().error(), None);
+    let started = std::time::Instant::now();
+    h.run_steps(5);
+    assert!(started.elapsed() < Duration::from_secs(5), "frames took {:?}", started.elapsed());
+    h.get_by_label_contains("Changed. Left line 1: var x=1;");
     Ok(())
 }
 

@@ -51,6 +51,7 @@ enum Command {
 }
 
 fn main() -> ExitCode {
+    difflux_app::crash::install(env!("CARGO_PKG_VERSION"));
     init_logging();
     let cli = Cli::parse();
     let result = match cli.command {

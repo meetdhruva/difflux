@@ -5,7 +5,7 @@ use std::io;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
-use difflux_core::{CancelToken, Cancelled, CompareOptions, Progress, TextOptions};
+use difflux_core::{CancelToken, Cancelled, CompareOptions, Progress, Side, TextOptions};
 use difflux_diff_dir::FolderDiff;
 use difflux_diff_text::{TextDiff, diff_documents};
 use difflux_text::{Content, Document, decode};
@@ -155,6 +155,22 @@ pub fn compare_files(left: &Path, right: &Path, opts: &TextOptions, cancel: &Can
     finish(left, right, identical, opts, cancel, started)
 }
 
+/// Compares a file that exists on only one side against nothing, so its whole
+/// content shows as added (right side) or removed (left side).
+pub fn compare_one_sided(path: &Path, side: Side, opts: &TextOptions, cancel: &CancelToken) -> Result<FileCompare, CompareError> {
+    let started = Instant::now();
+    let bytes = fs::read(path).map_err(|e| missing_or_io(path, e))?;
+    cancel.check()?;
+    let present = SideContent { name: path.display().to_string(), content: decode(&bytes) };
+    let missing = SideContent { name: "(not present)".into(), content: Content::Text(Document::from_text(String::new())) };
+    let identical = bytes.is_empty();
+    let (left, right) = match side {
+        Side::Left => (present, missing),
+        Side::Right => (missing, present),
+    };
+    finish(left, right, identical, opts, cancel, started)
+}
+
 /// Compares two in-memory texts (used by the MCP server and tests).
 pub fn compare_texts(left: String, right: String, opts: &TextOptions, cancel: &CancelToken) -> Result<FileCompare, CompareError> {
     let started = Instant::now();
@@ -201,6 +217,19 @@ mod tests {
         assert_eq!(compare_texts("a".into(), "b".into(), &opts, &c)?.verdict, FileVerdict::Different);
         let ws = TextOptions { whitespace: WhitespaceMode::All, ..TextOptions::default() };
         assert_eq!(compare_texts("a b".into(), "ab".into(), &ws, &c)?.verdict, FileVerdict::Equivalent);
+        Ok(())
+    }
+
+    #[test]
+    fn one_sided_files_show_everything_as_added_or_removed() -> TestResult {
+        let dir = tempfile::tempdir()?;
+        let path = dir.path().join("new.txt");
+        fs::write(&path, "one\ntwo\n")?;
+        let c = compare_one_sided(&path, Side::Right, &TextOptions::default(), &CancelToken::new())?;
+        assert_eq!(c.verdict, FileVerdict::Different);
+        let stats = c.diff.as_ref().map(|d| d.stats).ok_or("no diff")?;
+        assert_eq!((stats.added, stats.removed), (2, 0));
+        assert_eq!(c.left.name, "(not present)");
         Ok(())
     }
 
