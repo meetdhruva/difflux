@@ -21,6 +21,8 @@ concurrency:
 env:
   CARGO_TERM_COLOR: always
   TAG: ${{ github.event.inputs.tag || github.ref_name }}
+  # Windows release builds must embed the icon and version info (see crates/difflux/build.rs).
+  DIFFLUX_REQUIRE_WINDOWS_RESOURCES: "1"
 
 jobs:
   check-version:
@@ -121,6 +123,19 @@ jobs:
             if [ -f "$src/$b$exe" ]; then cp "$src/$b$exe" "dist/$name/"; cp "$src/$b$exe" bins/; fi
           done
           cp README.md CHANGELOG.md LICENSE-MIT LICENSE-APACHE "dist/$name/"
+          case "${{ matrix.target }}" in
+            *linux-gnu)
+              # Desktop integration, laid out like /usr/local: copy share/ next to bin/.
+              mkdir -p "dist/$name/share/applications"
+              cp assets/linux/difflux.desktop "dist/$name/share/applications/"
+              for size in 16 24 32 48 64 128 256 512; do
+                mkdir -p "dist/$name/share/icons/hicolor/${size}x${size}/apps"
+                cp "assets/icon/png/difflux-$size.png" "dist/$name/share/icons/hicolor/${size}x${size}/apps/difflux.png"
+              done
+              mkdir -p "dist/$name/share/icons/hicolor/scalable/apps"
+              cp assets/icon/difflux.svg "dist/$name/share/icons/hicolor/scalable/apps/difflux.svg"
+              ;;
+          esac
           cd dist
           case "${{ matrix.target }}" in
             *windows*) 7z a -tzip "$name.zip" "$name" > /dev/null ;;
@@ -128,6 +143,23 @@ jobs:
           esac
           rm -rf "$name"
           ls -l
+
+      - uses: taiki-e/install-action@1919c4a95903d2c33e4a221102edca87309fc14b # v2.89.0
+        if: endsWith(matrix.target, 'linux-gnu')
+        with:
+          tool: cargo-deb
+
+      - name: Debian package
+        if: endsWith(matrix.target, 'linux-gnu')
+        run: |
+          cargo deb -p difflux --no-build --target ${{ matrix.target }} --output dist/
+          deb=$(ls dist/*.deb)
+          dpkg-deb --info "$deb"
+          dpkg-deb --contents "$deb"
+          sudo dpkg -i "$deb"
+          difflux --version
+          sudo apt-get install -y --no-install-recommends desktop-file-utils > /dev/null
+          desktop-file-validate /usr/share/applications/difflux.desktop
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -174,6 +206,7 @@ jobs:
           mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
           cp universal/difflux-app "$app/Contents/MacOS/difflux-app"
           cp universal/difflux "$app/Contents/MacOS/difflux"
+          cp assets/icon/difflux.icns "$app/Contents/Resources/difflux.icns"
           cat > "$app/Contents/Info.plist" <<PLIST
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -183,6 +216,7 @@ jobs:
             <key>CFBundleDisplayName</key><string>difflux</string>
             <key>CFBundleIdentifier</key><string>io.github.meetdhruva.difflux</string>
             <key>CFBundleExecutable</key><string>difflux-app</string>
+            <key>CFBundleIconFile</key><string>difflux</string>
             <key>CFBundlePackageType</key><string>APPL</string>
             <key>CFBundleShortVersionString</key><string>${version}</string>
             <key>CFBundleVersion</key><string>${version}</string>
@@ -248,6 +282,7 @@ jobs:
           | Windows x64 / Arm64 | `difflux-*-windows-x86_64.zip`, `difflux-*-windows-arm64.zip` |
           | macOS app (Apple Silicon + Intel) | `difflux-*-macos-universal.app.zip` |
           | macOS command line | `difflux-*-macos-universal.tar.gz` (or per-architecture archives) |
+          | Debian / Ubuntu x64 / Arm64 | `difflux_*_amd64.deb`, `difflux_*_arm64.deb` |
           | Linux x64 / Arm64 (desktop + CLI) | `difflux-*-linux-x86_64.tar.gz`, `difflux-*-linux-arm64.tar.gz` |
           | Linux static CLI + MCP, no GUI | `difflux-*-linux-*-cli-static.tar.gz` |
 
