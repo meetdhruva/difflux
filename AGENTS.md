@@ -34,6 +34,7 @@ crates/
   difflux-gui        egui desktop app. Only crate that knows about egui.
   difflux            the binary. `gui` feature (default) pulls in difflux-gui.
 xtask/               cargo xtask ci | perf | schema
+.github/workflows/    ci.yml (3-OS checks), release.yml (tag vX.Y.Z → all platform builds)
 docs/adr/            architecture decisions; read before changing structure
 docs/schema/         generated JSON Schema for --json output (checked in CI)
 ```

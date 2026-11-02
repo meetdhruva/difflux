@@ -1,0 +1,6 @@
+# Normalize line endings so checked-in outputs (JSON Schema, snapshots) and
+# rustfmt checks match byte-for-byte on Windows too.
+* text=auto eol=lf
+*.png binary
+*.ico binary
+*.icns binary

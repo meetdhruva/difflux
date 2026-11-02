@@ -1,5 +1,9 @@
 # difflux
 
+[![ci](https://github.com/meetdhruva/difflux/actions/workflows/ci.yml/badge.svg)](https://github.com/meetdhruva/difflux/actions/workflows/ci.yml)
+[![release](https://img.shields.io/github/v/release/meetdhruva/difflux?sort=semver)](https://github.com/meetdhruva/difflux/releases/latest)
+[![license](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue)](#license)
+
 Fast, reliable file and folder compare. A native, cross-platform replacement
 for Beyond Compare, written in Rust.
 
@@ -16,6 +20,30 @@ Windows, macOS and Linux. MIT or Apache-2.0.
 
 ![Folder compare](docs/screenshots/folder-dark.png)
 ![Text compare](docs/screenshots/text-light.png)
+
+## Install
+
+Download the archive for your platform from the
+[latest release](https://github.com/meetdhruva/difflux/releases/latest):
+
+| Platform | Download |
+|---|---|
+| Windows (x64, Arm64) | `difflux-<version>-windows-x86_64.zip` / `-windows-arm64.zip` |
+| macOS app (Apple Silicon + Intel) | `difflux-<version>-macos-universal.app.zip` |
+| macOS command line | `difflux-<version>-macos-universal.tar.gz` |
+| Linux (x64, Arm64) | `difflux-<version>-linux-x86_64.tar.gz` / `-linux-arm64.tar.gz` |
+| Linux, static CLI + MCP only (servers, CI, containers) | `difflux-<version>-linux-x86_64-cli-static.tar.gz` / `-linux-arm64-cli-static.tar.gz` |
+
+Each archive contains `difflux` (command line; opens the app when run without a
+subcommand) and, for desktop builds, `difflux-app` (opens the app without a
+console window). Put them on your `PATH`.
+
+Builds are not code-signed yet. On macOS, right-click the app and choose
+**Open** the first time; on Windows, choose **More info → Run anyway**.
+Every download has a SHA-256 checksum and signed build provenance; see
+[SECURITY.md](SECURITY.md#verifying-downloads).
+
+From source: `cargo install --locked --git https://github.com/meetdhruva/difflux difflux`
 
 ## Use it
 
@@ -101,6 +129,19 @@ GUI (egui)        CLI · JSON · MCP
 5. Hex compare with rsync-style anchors; table (CSV) and image compare
 6. Archives, SFTP and cloud storage through a virtual file system layer
 
+## Contributing
+
+Issues and pull requests are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md)
+and the [Code of Conduct](CODE_OF_CONDUCT.md). Report security issues
+privately as described in [SECURITY.md](SECURITY.md). Changes are listed in
+[CHANGELOG.md](CHANGELOG.md).
+
 ## License
 
-Licensed under either of Apache License 2.0 or MIT license, at your option.
+Licensed under either of [Apache License 2.0](LICENSE-APACHE) or
+[MIT license](LICENSE-MIT), at your option.
+
+Unless you explicitly state otherwise, any contribution intentionally
+submitted for inclusion in difflux by you, as defined in the Apache-2.0
+license, shall be dual licensed as above, without any additional terms or
+conditions.

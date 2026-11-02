@@ -1,0 +1,48 @@
+name: Bug report
+description: Something does not work as expected
+labels: ["bug", "triage"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: How to reproduce
+      description: The smallest files or folders that show the problem (attach or describe them), and the exact command or clicks.
+      placeholder: |
+        1. difflux diff --json left/ right/
+        2. ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: difflux version
+      description: Output of `difflux --version`
+      placeholder: difflux 0.1.0
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options: [Windows, macOS, Linux, Other]
+    validations:
+      required: true
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Where
+      multiple: true
+      options: [Desktop app, "CLI (difflux diff)", "MCP server (difflux mcp)", Build from source]
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or output
+      description: Run with `DIFFLUX_LOG=debug` and paste stderr if relevant.
+      render: shell
