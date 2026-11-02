@@ -1,13 +1,15 @@
 name: release
 
-# Push a tag like v0.1.0 to build every platform and publish a GitHub release.
+# Push a tag like v0.1.0, or run this workflow manually with a tag name, to
+# build every platform and publish a GitHub release. Manual runs create the tag
+# at the selected branch's HEAD when it does not exist yet.
 on:
   push:
     tags: ["v[0-9]+.[0-9]+.[0-9]+*"]
   workflow_dispatch:
     inputs:
       tag:
-        description: Existing tag to (re)build, e.g. v0.1.0
+        description: Tag to release, e.g. v0.1.0 (created at the branch HEAD if missing)
         required: true
 
 permissions:
@@ -23,16 +25,27 @@ env:
 jobs:
   check-version:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # create the tag on manual runs
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ env.TAG }}
           persist-credentials: false
       - name: Tag matches Cargo.toml and CHANGELOG.md
         run: |
           version=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)
           [ "v$version" = "$TAG" ] || { echo "::error::tag $TAG does not match Cargo.toml version $version"; exit 1; }
           grep -q "^## \[$version\]" CHANGELOG.md || { echo "::error::CHANGELOG.md has no [$version] section"; exit 1; }
+      - name: Create tag (manual runs)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh api "repos/${{ github.repository }}/git/ref/tags/$TAG" >/dev/null 2>&1; then
+            echo "tag $TAG already exists"
+          else
+            gh api "repos/${{ github.repository }}/git/refs" -f ref="refs/tags/$TAG" -f sha="$GITHUB_SHA"
+          fi
 
   build:
     name: build ${{ matrix.name }}
