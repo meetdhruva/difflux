@@ -1,6 +1,6 @@
 [package]
 name = "difflux"
-description = "difflux: fast, reliable file and folder compare."
+description = "Fast, reliable file and folder compare"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -34,12 +34,16 @@ gui = ["dep:difflux-gui"]
 
 [dependencies]
 difflux-cli.workspace = true
+difflux-app.workspace = true
 difflux-gui = { workspace = true, optional = true }
 anyhow.workspace = true
 clap.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
 mimalloc.workspace = true
+
+[target.'cfg(windows)'.build-dependencies]
+winresource = "0.1.34"
 
 [dev-dependencies]
 tempfile.workspace = true
@@ -49,3 +53,32 @@ difflux-text.workspace = true
 difflux-diff-text.workspace = true
 difflux-diff-dir.workspace = true
 difflux-app.workspace = true
+
+# `cargo deb -p difflux` (used by the release workflow for Linux .deb packages).
+[package.metadata.deb]
+name = "difflux"
+maintainer = "meetdhruva <268780292+meetdhruva@users.noreply.github.com>"
+copyright = "difflux contributors"
+license-file = ["../../LICENSE-MIT", "0"]
+extended-description = """\
+Fast, reliable file and folder compare with a desktop app, a command line \
+with JSON output, and an MCP server for AI agents."""
+section = "utils"
+priority = "optional"
+depends = "$auto"
+assets = [
+    ["target/release/difflux", "usr/bin/", "755"],
+    ["target/release/difflux-app", "usr/bin/", "755"],
+    ["../../assets/linux/difflux.desktop", "usr/share/applications/", "644"],
+    ["../../assets/icon/png/difflux-16.png", "usr/share/icons/hicolor/16x16/apps/difflux.png", "644"],
+    ["../../assets/icon/png/difflux-24.png", "usr/share/icons/hicolor/24x24/apps/difflux.png", "644"],
+    ["../../assets/icon/png/difflux-32.png", "usr/share/icons/hicolor/32x32/apps/difflux.png", "644"],
+    ["../../assets/icon/png/difflux-48.png", "usr/share/icons/hicolor/48x48/apps/difflux.png", "644"],
+    ["../../assets/icon/png/difflux-64.png", "usr/share/icons/hicolor/64x64/apps/difflux.png", "644"],
+    ["../../assets/icon/png/difflux-128.png", "usr/share/icons/hicolor/128x128/apps/difflux.png", "644"],
+    ["../../assets/icon/png/difflux-256.png", "usr/share/icons/hicolor/256x256/apps/difflux.png", "644"],
+    ["../../assets/icon/png/difflux-512.png", "usr/share/icons/hicolor/512x512/apps/difflux.png", "644"],
+    ["../../assets/icon/difflux.svg", "usr/share/icons/hicolor/scalable/apps/difflux.svg", "644"],
+    ["../../README.md", "usr/share/doc/difflux/README.md", "644"],
+    ["../../CHANGELOG.md", "usr/share/doc/difflux/CHANGELOG.md", "644"],
+]

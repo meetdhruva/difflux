@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=difflux
+GenericName=File and Folder Compare
+Comment=Compare files and folders side by side
+Exec=difflux-app %F
+Icon=difflux
+Terminal=false
+Categories=Development;
+Keywords=diff;compare;merge;folder;beyond compare;
+StartupWMClass=difflux

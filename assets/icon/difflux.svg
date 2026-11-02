@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <title>difflux</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2E3650"/>
+      <stop offset="1" stop-color="#151925"/>
+    </linearGradient>
+    <linearGradient id="flux" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#E8732A"/>
+      <stop offset="0.5" stop-color="#E69F00"/>
+      <stop offset="1" stop-color="#2E8FD6"/>
+    </linearGradient>
+    <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#E9ECF3"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded-square tile (macOS-style margins, also reads well on Windows/Linux). -->
+  <rect x="64" y="64" width="896" height="896" rx="208" fill="url(#bg)"/>
+  <rect x="64.5" y="64.5" width="895" height="895" rx="207.5" fill="none" stroke="#FFFFFF" stroke-opacity="0.08" stroke-width="3"/>
+
+  <!-- Flux band joining the changed rows of both sides. -->
+  <path d="M 452 396 C 512 396, 512 476, 572 476 L 572 584 C 512 584, 512 504, 452 504 Z" fill="url(#flux)"/>
+
+  <!-- Left document. -->
+  <rect x="176" y="208" width="292" height="608" rx="44" fill="url(#paper)"/>
+  <rect x="176" y="396" width="292" height="108" fill="#F9C9A9"/>
+  <rect x="228" y="264" width="188" height="30" rx="15" fill="#9AA2B4"/>
+  <rect x="228" y="326" width="136" height="30" rx="15" fill="#9AA2B4"/>
+  <rect x="228" y="414" width="176" height="30" rx="15" fill="#B4470C"/>
+  <rect x="228" y="456" width="120" height="30" rx="15" fill="#B4470C"/>
+  <rect x="228" y="548" width="188" height="30" rx="15" fill="#9AA2B4"/>
+  <rect x="228" y="610" width="152" height="30" rx="15" fill="#9AA2B4"/>
+  <rect x="228" y="672" width="104" height="30" rx="15" fill="#9AA2B4"/>
+
+  <!-- Right document. -->
+  <rect x="556" y="208" width="292" height="608" rx="44" fill="url(#paper)"/>
+  <rect x="556" y="476" width="292" height="108" fill="#BFDDF5"/>
+  <rect x="608" y="264" width="188" height="30" rx="15" fill="#9AA2B4"/>
+  <rect x="608" y="326" width="136" height="30" rx="15" fill="#9AA2B4"/>
+  <rect x="608" y="388" width="164" height="30" rx="15" fill="#9AA2B4"/>
+  <rect x="608" y="494" width="188" height="30" rx="15" fill="#005A9C"/>
+  <rect x="608" y="536" width="140" height="30" rx="15" fill="#005A9C"/>
+  <rect x="608" y="628" width="152" height="30" rx="15" fill="#9AA2B4"/>
+  <rect x="608" y="690" width="104" height="30" rx="15" fill="#9AA2B4"/>
+</svg>
