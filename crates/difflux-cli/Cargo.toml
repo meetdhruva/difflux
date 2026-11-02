@@ -1,0 +1,27 @@
+[package]
+name = "difflux-cli"
+description = "Command-line front end, JSON output and MCP server."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+difflux-core.workspace = true
+difflux-text.workspace = true
+difflux-diff-text.workspace = true
+difflux-diff-dir.workspace = true
+difflux-app.workspace = true
+anyhow.workspace = true
+clap.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+schemars.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

@@ -1,0 +1,23 @@
+[package]
+name = "difflux-text"
+description = "Text decoding, encoding detection, line indexing and normalization."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+difflux-core.workspace = true
+memchr.workspace = true
+encoding_rs.workspace = true
+chardetng.workspace = true
+serde.workspace = true
+schemars.workspace = true
+
+[dev-dependencies]
+proptest.workspace = true

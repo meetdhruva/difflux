@@ -1,0 +1,39 @@
+[package]
+name = "difflux"
+description = "difflux: fast, reliable file and folder compare."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[[bin]]
+name = "difflux"
+path = "src/main.rs"
+
+[features]
+default = ["gui"]
+# Build without the GUI for headless servers, CI and agents: --no-default-features
+gui = ["dep:difflux-gui"]
+
+[dependencies]
+difflux-cli.workspace = true
+difflux-gui = { workspace = true, optional = true }
+anyhow.workspace = true
+clap.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+mimalloc.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+serde_json.workspace = true
+difflux-core.workspace = true
+difflux-text.workspace = true
+difflux-diff-text.workspace = true
+difflux-diff-dir.workspace = true
+difflux-app.workspace = true

@@ -1,0 +1,30 @@
+[package]
+name = "difflux-gui"
+description = "Desktop GUI built on egui."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+difflux-core.workspace = true
+difflux-text.workspace = true
+difflux-diff-text.workspace = true
+difflux-diff-dir.workspace = true
+difflux-app.workspace = true
+eframe = { workspace = true, features = ["persistence"] }
+egui = { workspace = true, features = ["monochrome_emoji_fonts"] }
+rfd.workspace = true
+tracing.workspace = true
+serde.workspace = true
+jiff.workspace = true
+
+[dev-dependencies]
+egui_kittest = { workspace = true, features = ["wgpu"] }
+image = { version = "0.25", default-features = false, features = ["png"] }
+tempfile.workspace = true

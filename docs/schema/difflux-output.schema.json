@@ -1,0 +1,723 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Output",
+  "description": "Top-level document for every JSON output.",
+  "type": "object",
+  "properties": {
+    "schema": {
+      "description": "Always `difflux/1` for this version of the format.",
+      "type": "string"
+    }
+  },
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "files"
+        }
+      },
+      "$ref": "#/$defs/FilesReport",
+      "required": [
+        "kind"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "folders"
+        }
+      },
+      "$ref": "#/$defs/FoldersReport",
+      "required": [
+        "kind"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "error"
+        }
+      },
+      "$ref": "#/$defs/ErrorReport",
+      "required": [
+        "kind"
+      ]
+    }
+  ],
+  "required": [
+    "schema"
+  ],
+  "$defs": {
+    "Basis": {
+      "description": "What a verdict was based on, so users and agents know how much to trust it.",
+      "oneOf": [
+        {
+          "description": "Bytes were compared.",
+          "type": "string",
+          "const": "content"
+        },
+        {
+          "description": "Sizes differ.",
+          "type": "string",
+          "const": "size"
+        },
+        {
+          "description": "Size and modification time only (contents were not read).",
+          "type": "string",
+          "const": "metadata"
+        },
+        {
+          "description": "Symbolic link targets were compared.",
+          "type": "string",
+          "const": "link_target"
+        },
+        {
+          "description": "Folder verdict derived from its children.",
+          "type": "string",
+          "const": "children"
+        }
+      ]
+    },
+    "ContentMode": {
+      "description": "How file contents are compared during a folder compare.",
+      "oneOf": [
+        {
+          "description": "Equal size and modification time count as identical; otherwise compare bytes.",
+          "type": "string",
+          "const": "smart"
+        },
+        {
+          "description": "Always compare bytes when sizes match. Slowest, never wrong.",
+          "type": "string",
+          "const": "exact"
+        },
+        {
+          "description": "Never read file contents; decide on size and modification time only.",
+          "type": "string",
+          "const": "metadata"
+        }
+      ]
+    },
+    "DiffStats": {
+      "description": "Line-level counts.",
+      "type": "object",
+      "properties": {
+        "added": {
+          "description": "Lines only on the right.",
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "hunks": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "modified": {
+          "description": "Line pairs present on both sides but changed.",
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "removed": {
+          "description": "Lines only on the left.",
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "unchanged": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "hunks",
+        "added",
+        "removed",
+        "modified",
+        "unchanged"
+      ]
+    },
+    "EntryKind": {
+      "description": "Kind of filesystem entry.",
+      "type": "string",
+      "enum": [
+        "file",
+        "dir",
+        "symlink",
+        "other"
+      ]
+    },
+    "EntryMeta": {
+      "description": "Metadata of an entry on one side.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/EntryKind"
+        },
+        "link_target": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "modified_ms": {
+          "description": "Modification time in milliseconds since the Unix epoch.",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int64"
+        },
+        "size": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "kind",
+        "size"
+      ]
+    },
+    "ErrorReport": {
+      "description": "The comparison could not be performed.",
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "message"
+      ]
+    },
+    "FileInfo": {
+      "description": "Facts about one input file.",
+      "type": "object",
+      "properties": {
+        "binary": {
+          "type": "boolean"
+        },
+        "bom": {
+          "type": "boolean"
+        },
+        "bytes": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "encoding": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "line_ending": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LineEnding"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "lines": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint64",
+          "minimum": 0
+        },
+        "path": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "bytes",
+        "binary",
+        "bom"
+      ]
+    },
+    "FileStatus": {
+      "description": "Verdict for a pair of files.",
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "different",
+            "binary_different"
+          ]
+        },
+        {
+          "description": "Byte-for-byte identical.",
+          "type": "string",
+          "const": "identical"
+        },
+        {
+          "description": "Bytes differ only in ways the comparison rules ignore.",
+          "type": "string",
+          "const": "equivalent"
+        }
+      ]
+    },
+    "FilesReport": {
+      "description": "Result of comparing two files.",
+      "type": "object",
+      "properties": {
+        "elapsed_ms": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "hunks": {
+          "description": "Changed regions with surrounding context, like a unified diff.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/JsonHunk"
+          }
+        },
+        "left": {
+          "$ref": "#/$defs/FileInfo"
+        },
+        "options": {
+          "$ref": "#/$defs/TextOptions"
+        },
+        "right": {
+          "$ref": "#/$defs/FileInfo"
+        },
+        "stats": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DiffStats"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "$ref": "#/$defs/FileStatus"
+        },
+        "truncated": {
+          "description": "True when `max_lines` cut the hunk list short.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "status",
+        "left",
+        "right",
+        "options",
+        "hunks",
+        "truncated",
+        "elapsed_ms"
+      ]
+    },
+    "FolderOptions": {
+      "description": "Rules for comparing folders.",
+      "type": "object",
+      "properties": {
+        "content": {
+          "$ref": "#/$defs/ContentMode",
+          "default": "smart"
+        },
+        "excludes": {
+          "description": "Glob patterns (matched against the entry name and its relative path) to skip.",
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          }
+        },
+        "follow_symlinks": {
+          "description": "Follow symbolic links instead of comparing the link targets.",
+          "type": "boolean",
+          "default": false
+        },
+        "mtime_tolerance_ms": {
+          "description": "Modification times closer than this count as equal (FAT and SMB round timestamps).",
+          "type": "integer",
+          "format": "uint64",
+          "default": 0,
+          "minimum": 0
+        },
+        "names": {
+          "$ref": "#/$defs/NameMatching",
+          "default": "auto"
+        },
+        "threads": {
+          "description": "Worker threads; `None` uses one per CPU. Lower it for spinning disks and network shares.",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint",
+          "default": null,
+          "minimum": 0
+        }
+      }
+    },
+    "FolderStats": {
+      "description": "Counts over files (folders are counted separately).",
+      "type": "object",
+      "properties": {
+        "bytes_compared": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "different": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "errors": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "folders": {
+          "description": "Folders present on at least one side (the root excluded).",
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "identical": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "left_only": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "right_only": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "type_mismatches": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "identical",
+        "different",
+        "left_only",
+        "right_only",
+        "type_mismatches",
+        "errors",
+        "folders",
+        "bytes_compared"
+      ]
+    },
+    "FolderStatus": {
+      "description": "Overall verdict for two folders.",
+      "type": "string",
+      "enum": [
+        "identical",
+        "different"
+      ]
+    },
+    "FoldersReport": {
+      "description": "Result of comparing two folders.",
+      "type": "object",
+      "properties": {
+        "elapsed_ms": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "entries": {
+          "description": "Entries, depth-first; identical entries only with `include_identical`.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/JsonEntry"
+          }
+        },
+        "left": {
+          "type": "string"
+        },
+        "options": {
+          "$ref": "#/$defs/FolderOptions"
+        },
+        "right": {
+          "type": "string"
+        },
+        "stats": {
+          "$ref": "#/$defs/FolderStats"
+        },
+        "status": {
+          "$ref": "#/$defs/FolderStatus"
+        },
+        "truncated": {
+          "description": "True when `max_entries` cut the list short.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "status",
+        "left",
+        "right",
+        "stats",
+        "options",
+        "entries",
+        "truncated",
+        "elapsed_ms"
+      ]
+    },
+    "JsonEntry": {
+      "description": "One file or folder in a folder comparison.",
+      "type": "object",
+      "properties": {
+        "basis": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Basis"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "error": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "kind": {
+          "$ref": "#/$defs/EntryKind"
+        },
+        "left": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EntryMeta"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "path": {
+          "description": "Path relative to both roots, `/`-separated.",
+          "type": "string"
+        },
+        "right": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EntryMeta"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "$ref": "#/$defs/Status"
+        }
+      },
+      "required": [
+        "path",
+        "kind",
+        "status"
+      ]
+    },
+    "JsonHunk": {
+      "description": "One changed region.",
+      "type": "object",
+      "properties": {
+        "left_count": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "left_start": {
+          "description": "First left line (1-based; 0 when the hunk has no left lines at the start of the file).",
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "lines": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/JsonLine"
+          }
+        },
+        "right_count": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "right_start": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "left_start",
+        "left_count",
+        "right_start",
+        "right_count",
+        "lines"
+      ]
+    },
+    "JsonLine": {
+      "description": "A line inside a hunk.",
+      "type": "object",
+      "properties": {
+        "left": {
+          "description": "1-based left line number, when the line exists on the left.",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        },
+        "op": {
+          "$ref": "#/$defs/LineOp"
+        },
+        "right": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "text"
+      ]
+    },
+    "LineEnding": {
+      "description": "Line terminators found in a document.",
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "lf",
+            "crlf",
+            "cr",
+            "mixed"
+          ]
+        },
+        {
+          "description": "Single line without any terminator.",
+          "type": "string",
+          "const": "none"
+        }
+      ]
+    },
+    "LineOp": {
+      "description": "Role of a line inside a hunk.",
+      "type": "string",
+      "enum": [
+        "context",
+        "removed",
+        "added"
+      ]
+    },
+    "NameMatching": {
+      "description": "How entry names are matched between the two sides.",
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "case_sensitive",
+            "case_insensitive"
+          ]
+        },
+        {
+          "description": "Case-insensitive on Windows and macOS, case-sensitive elsewhere.",
+          "type": "string",
+          "const": "auto"
+        }
+      ]
+    },
+    "Status": {
+      "description": "Verdict for one entry.",
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "identical",
+            "different",
+            "left_only",
+            "right_only",
+            "error"
+          ]
+        },
+        {
+          "description": "A file on one side and a folder (or link) on the other.",
+          "type": "string",
+          "const": "type_mismatch"
+        }
+      ]
+    },
+    "TextOptions": {
+      "description": "Rules for comparing text. Rules only affect *matching*; displayed text is never altered.",
+      "type": "object",
+      "properties": {
+        "ignore_case": {
+          "type": "boolean",
+          "default": false
+        },
+        "ignore_line_endings": {
+          "description": "Treat CRLF, LF and CR line endings as equal.",
+          "type": "boolean",
+          "default": true
+        },
+        "whitespace": {
+          "$ref": "#/$defs/WhitespaceMode",
+          "default": "exact"
+        }
+      }
+    },
+    "WhitespaceMode": {
+      "description": "How whitespace differences are treated when comparing text.",
+      "oneOf": [
+        {
+          "description": "Every byte matters.",
+          "type": "string",
+          "const": "exact"
+        },
+        {
+          "description": "Ignore whitespace at the end of lines.",
+          "type": "string",
+          "const": "trailing"
+        },
+        {
+          "description": "Treat runs of whitespace as a single space and ignore trailing whitespace (like `diff -b`).",
+          "type": "string",
+          "const": "change"
+        },
+        {
+          "description": "Ignore all whitespace (like `diff -w`).",
+          "type": "string",
+          "const": "all"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,49 @@
+# cargo-deny: licenses, advisories, bans, sources. Run with `cargo deny check`.
+[graph]
+all-features = true
+
+[advisories]
+version = 2
+yanked = "deny"
+# Vulnerabilities always fail. These are "unmaintained" notices for transitive
+# dependencies of egui/AccessKit with no known vulnerability; re-check on every
+# egui upgrade and remove the entry once upstream moves off the crate.
+ignore = [
+    { id = "RUSTSEC-2026-0192", reason = "ttf-parser via egui/ab_glyph: unmaintained notice only" },
+    { id = "RUSTSEC-2026-0370", reason = "zvariant via accesskit_unix (Linux screen reader bridge): unmaintained notice only" },
+    { id = "RUSTSEC-2026-0371", reason = "zbus_names via accesskit_unix (Linux screen reader bridge): unmaintained notice only" },
+    { id = "RUSTSEC-2026-0372", reason = "zvariant_derive via accesskit_unix (Linux screen reader bridge): unmaintained notice only" },
+]
+
+[licenses]
+version = 2
+# Permissive licenses only, so difflux stays MIT OR Apache-2.0.
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Zlib",
+    "Unicode-3.0",
+    "Unicode-DFS-2016",
+    "CC0-1.0",
+    "BSL-1.0",
+    "MPL-2.0",
+    "OFL-1.1",
+    "Ubuntu-font-1.0",
+    "CDLA-Permissive-2.0",
+    "bzip2-1.0.6",
+]
+confidence-threshold = 0.9
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+# Workspace crates refer to each other by path; they are never published.
+allow-wildcard-paths = true
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"

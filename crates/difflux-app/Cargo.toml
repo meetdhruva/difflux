@@ -1,0 +1,24 @@
+[package]
+name = "difflux-app"
+description = "UI-agnostic application layer: compare sessions, background jobs, view-models."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+difflux-core.workspace = true
+difflux-text.workspace = true
+difflux-diff-text.workspace = true
+difflux-diff-dir.workspace = true
+crossbeam-channel.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

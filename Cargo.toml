@@ -1,0 +1,100 @@
+[workspace]
+resolver = "3"
+members = ["crates/*", "xtask"]
+default-members = ["crates/difflux"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.97"
+license = "MIT OR Apache-2.0"
+authors = ["difflux contributors"]
+publish = false
+
+[workspace.dependencies]
+# internal
+difflux-core = { path = "crates/difflux-core" }
+difflux-text = { path = "crates/difflux-text" }
+difflux-diff-text = { path = "crates/difflux-diff-text" }
+difflux-diff-dir = { path = "crates/difflux-diff-dir" }
+difflux-app = { path = "crates/difflux-app" }
+difflux-cli = { path = "crates/difflux-cli" }
+difflux-gui = { path = "crates/difflux-gui" }
+
+# engine
+imara-diff = "0.2.0"
+memchr = "2.8"
+encoding_rs = "0.8.44"
+chardetng = "1.0"
+rayon = "1.12"
+crossbeam-channel = "0.5.17"
+globset = "0.4.21"
+unicode-normalization = "0.1.26"
+thiserror = "2.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+schemars = "1.2"
+jiff = "0.2.38"
+
+# app / cli
+anyhow = "1.0"
+clap = { version = "4.6", features = ["derive", "wrap_help", "env"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+mimalloc = "0.1.52"
+
+# gui
+eframe = "0.37"
+egui = "0.37"
+egui_extras = "0.37"
+egui_kittest = "0.37"
+rfd = "0.17"
+
+# dev
+proptest = "1.12"
+tempfile = "3.27"
+filetime = "0.2.29"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+missing_debug_implementations = "warn"
+rust_2018_idioms = { level = "warn", priority = -1 }
+unreachable_pub = "warn"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+# Pedantic lints that fight readable UI/engine code more than they help.
+module_name_repetitions = "allow"
+must_use_candidate = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+cast_possible_truncation = "allow"
+cast_precision_loss = "allow"
+cast_sign_loss = "allow"
+too_many_lines = "allow"
+struct_excessive_bools = "allow"
+# Correctness guards that matter for a tool that touches user files.
+unwrap_used = "warn"
+dbg_macro = "warn"
+todo = "warn"
+print_stdout = "warn"
+print_stderr = "warn"
+
+[profile.dev]
+# Engine code is hot; keep debug builds usable on big inputs.
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 3
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+panic = "unwind" # a panicking worker becomes an error row, not a dead app
+strip = "symbols"
+
+[profile.profiling]
+inherits = "release"
+debug = "line-tables-only"
+strip = "none"
