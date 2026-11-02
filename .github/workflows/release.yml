@@ -107,7 +107,9 @@ jobs:
           printf 'a\nb\n' > left.txt; printf 'a\nc\n' > right.txt
           set +e; "$bin" diff left.txt right.txt; code=$?; set -e
           [ "$code" = 1 ] || { echo "::error::expected exit code 1, got $code"; exit 1; }
-          "$bin" diff --json left.txt right.txt | grep -q '"schema": "difflux/1"'
+          set +e; "$bin" diff --json left.txt right.txt > report.json; code=$?; set -e
+          [ "$code" = 1 ] || { echo "::error::expected exit code 1 from --json, got $code"; exit 1; }
+          grep -q '"schema": "difflux/1"' report.json
 
       - name: Package
         run: |
