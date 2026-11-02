@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/icon/png/difflux-128.png" width="96" height="96" alt="difflux icon"></p>
+
 # difflux
 
 [![ci](https://github.com/meetdhruva/difflux/actions/workflows/ci.yml/badge.svg)](https://github.com/meetdhruva/difflux/actions/workflows/ci.yml)
@@ -28,6 +30,7 @@ Download the archive for your platform from the
 
 | Platform | Download |
 |---|---|
+| Debian / Ubuntu (x64, Arm64) | `difflux_<version>-1_amd64.deb` / `_arm64.deb` (adds a menu entry) |
 | Windows (x64, Arm64) | `difflux-<version>-windows-x86_64.zip` / `-windows-arm64.zip` |
 | macOS app (Apple Silicon + Intel) | `difflux-<version>-macos-universal.app.zip` |
 | macOS command line | `difflux-<version>-macos-universal.tar.gz` |
@@ -36,7 +39,9 @@ Download the archive for your platform from the
 
 Each archive contains `difflux` (command line; opens the app when run without a
 subcommand) and, for desktop builds, `difflux-app` (opens the app without a
-console window). Put them on your `PATH`.
+console window). Put them on your `PATH`. Linux archives also contain
+`share/` with a desktop entry and icons; copy it to `~/.local/share` (or
+`/usr/local/share`) to get a menu entry.
 
 Builds are not code-signed yet. On macOS, right-click the app and choose
 **Open** the first time; on Windows, choose **More info → Run anyway**.

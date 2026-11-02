@@ -19,6 +19,7 @@ output, and an MCP server.
 | Compare in the terminal | `cargo run -- diff LEFT RIGHT [--json]` |
 | Performance budgets | `cargo xtask perf` (release build) |
 | Regenerate JSON Schema | `cargo xtask schema` |
+| Regenerate app icons from `assets/icon/difflux.svg` | `cargo xtask icons` |
 | Render UI screenshots to `target/screenshots/` | `cargo test -p difflux-gui --test screenshots -- --ignored` (needs a GPU or lavapipe) |
 
 ## Layout
@@ -33,7 +34,8 @@ crates/
   difflux-cli        `diff`, `schema`, `mcp` subcommands; JSON output types.
   difflux-gui        egui desktop app. Only crate that knows about egui.
   difflux            the binary. `gui` feature (default) pulls in difflux-gui.
-xtask/               cargo xtask ci | perf | schema
+xtask/               cargo xtask ci | perf | schema | icons
+assets/              icon source (SVG) and generated PNG/ICO/ICNS, Linux desktop entry
 .github/workflows/    ci.yml (3-OS checks), release.yml (tag vX.Y.Z → all platform builds)
 docs/adr/            architecture decisions; read before changing structure
 docs/schema/         generated JSON Schema for --json output (checked in CI)
