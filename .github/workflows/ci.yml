@@ -4,6 +4,14 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   CARGO_TERM_COLOR: always
@@ -11,20 +19,23 @@ env:
 
 jobs:
   check:
-    name: ${{ matrix.os }}
+    name: check (${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:
         # Filesystem behaviour (case, Unicode normalization, symlinks) differs per OS.
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@1.97
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          components: rustfmt, clippy
-      - uses: Swatinem/rust-cache@v2
-      - uses: taiki-e/install-action@v2
+          persist-credentials: false
+      - name: Install Rust (version from rust-toolchain.toml)
+        shell: bash
+        run: rustup toolchain install && rustup show active-toolchain
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      - uses: taiki-e/install-action@1919c4a95903d2c33e4a221102edca87309fc14b # v2.89.0
         with:
           tool: cargo-nextest,cargo-deny
       - run: cargo xtask ci
@@ -32,8 +43,12 @@ jobs:
   perf:
     name: performance budgets
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@1.97
-      - uses: Swatinem/rust-cache@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install Rust
+        run: rustup toolchain install
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
       - run: cargo xtask perf
