@@ -5,8 +5,14 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
 authors.workspace = true
 publish.workspace = true
+readme = "../../README.md"
+default-run = "difflux"
+keywords = ["diff", "compare", "folder-compare", "merge", "mcp"]
+categories = ["command-line-utilities", "development-tools", "text-processing"]
 
 [lints]
 workspace = true
@@ -14,6 +20,12 @@ workspace = true
 [[bin]]
 name = "difflux"
 path = "src/main.rs"
+
+# Desktop launcher: no console window on Windows, used by the macOS .app bundle.
+[[bin]]
+name = "difflux-app"
+path = "src/bin/difflux-app.rs"
+required-features = ["gui"]
 
 [features]
 default = ["gui"]
